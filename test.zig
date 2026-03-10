@@ -19,6 +19,7 @@ fn testFn(counts: []const u16, thresh: u16, expected_start: usize, expected_end:
 
 test "basic case" {
     try testFn(&[_]u16{ 2, 4, 3, 2, 1 }, 10, 1, 4);
+    try testFn(&[_]u16{ 2, 4, 3, 2, 1 }, 11, 0, 3);
     try testFn(&[_]u16{ 0, 1, 4, 2, 4, 1, 0 }, 10, 2, 4);
 }
 
