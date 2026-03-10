@@ -34,14 +34,11 @@ test "threshold is too small for any range" {
     try testFn(&[_]u16{ 10, 11, 12, 13, 14 }, 1, 5, 5);
 }
 
-test "don't go through homes with 0 candies if possible" {
-    try testFn(&[_]u16{ 1, 0, 4, 0, 0 }, 5, 0, 2);
-    try testFn(&[_]u16{ 0, 1, 0, 4, 0 }, 5, 1, 3);
-    try testFn(&[_]u16{ 0, 0, 1, 0, 4 }, 5, 2, 4);
-}
-
 test "prefer ranges with lower index if tie" {
+    try testFn(&[_]u16{ 1, 0, 4, 0, 0 }, 5, 0, 2);
+    try testFn(&[_]u16{ 0, 1, 0, 4, 0 }, 5, 0, 3);
+    try testFn(&[_]u16{ 0, 0, 1, 0, 4 }, 5, 0, 4);
     try testFn(&[_]u16{ 2, 3, 2, 0, 3 }, 5, 0, 1);
-    try testFn(&[_]u16{ 0, 1, 4, 2, 4, 1, 0 }, 5, 1, 2);
+    try testFn(&[_]u16{ 0, 1, 4, 2, 4, 1, 0 }, 5, 0, 2);
     try testFn(&[_]u16{ 0, 1, 4, 2, 4, 1, 0 }, 6, 2, 3);
 }

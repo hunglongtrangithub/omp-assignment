@@ -3,8 +3,7 @@
 
 /**
  * Finds the contiguous subarray of `candy_counts` with the maximum sum that
- * does not exceed `candies_thresh`. Ties are broken by lowest starting index,
- * and leading + trailing zero-candy homes are skipped to avoid wasteful visits.
+ * does not exceed `candies_thresh`. Ties are broken by lowest starting index.
  *
  * If no valid range exists (empty array, zero threshold, or all individual
  * homes exceed the threshold), both `home_start` and `home_end` are set to
@@ -41,14 +40,7 @@ void findBestHomeRange(const uint16_t *const candy_counts,
       curr_total -= candy_counts[start];
       start++;
     }
-    // If candy_counts[end] == 0, curr_total won't change,
-    // so we won't update the best range until we hit a non-zero candy count at
-    // the end of the range. This ensures we skip trailing zero-candy homes.
     if (curr_total > best_total) {
-      // Strip leading zero-candy homes before updating the best range.
-      while (candy_counts[start] == 0) {
-        start++;
-      }
       best_total = curr_total;
       best_start = start;
       best_end = end;
