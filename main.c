@@ -49,8 +49,8 @@ int main(void) {
 
   size_t home_start;
   size_t home_end;
-  findBestHomeRange(candy_counts, home_count, candies_thresh, &home_start,
-                    &home_end);
+  findBestHomeRangeParallel(candy_counts, home_count, candies_thresh,
+                            &home_start, &home_end);
 
   if (home_start < home_count && home_end < home_count) {
     uint16_t candies_total = 0;
