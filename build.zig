@@ -23,8 +23,16 @@ pub fn build(b: *std.Build) void {
             "-std=c11",
         },
     });
-
     mod.addIncludePath(b.path("."));
+
+    switch (target.result.os.tag) {
+        .macos => {
+            mod.addLibraryPath(.{ .cwd_relative = "/opt/homebrew/opt/libomp/lib" });
+            mod.addSystemIncludePath(.{ .cwd_relative = "/opt/homebrew/opt/libomp/include" });
+            mod.linkSystemLibrary("omp", .{});
+        },
+        else => @panic("Unsupported OS. Can only build on macOS with Homebrew's libomp installed."),
+    }
 
     const mod_tests = b.addTest(.{
         .root_module = mod,

@@ -1,10 +1,15 @@
 CC = gcc
-CFLAGS = -fopenmp -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
+CFLAGS = -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
          -Wcast-qual -Wnull-dereference \
          -std=c11
 
-all: main
-main: main.c
-	$(CC) $(CFLAGS) $^ -o $@
+all: main_parallel main_sequential
+
+main_parallel: main.c
+	$(CC) -fopenmp $(CFLAGS) -DUSE_PARALLEL $^ -o $@
+
+main_sequential: main.c
+	gcc $(CFLAGS) $^ -o $@
+
 clean:
-	rm main
+	rm -f main_parallel main_sequential
