@@ -1,7 +1,10 @@
+CC = gcc
+CFLAGS = -fopenmp -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
+         -Wcast-qual -Wnull-dereference \
+         -std=c11
+
 all: main
-
 main: main.c
-	gcc -fopenmp $^ -o $@
-
+	$(CC) $(CFLAGS) $^ -o $@
 clean:
 	rm main
