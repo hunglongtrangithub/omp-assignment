@@ -10,8 +10,8 @@ void findBestHomeRange(const uint16_t *const candy_counts,
     return;
   }
 
-  size_t best_start = 0;
-  size_t best_end = 0;
+  size_t best_start = home_count;
+  size_t best_end = home_count;
 
   size_t start = 0;
   uint32_t curr_total = 0;
