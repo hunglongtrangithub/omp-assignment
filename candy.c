@@ -31,8 +31,8 @@ void findBestHomeRange(const uint16_t *const candy_counts,
   size_t best_end = home_count;
 
   // Use a wider type to avoid potential overflow
-  uint32_t curr_total = 0;
-  uint32_t best_total = 0;
+  uint64_t curr_total = 0;
+  uint64_t best_total = 0;
 
   size_t start = 0;
   for (size_t end = 0; end < home_count; end++) {
