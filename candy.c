@@ -1,5 +1,5 @@
+#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 
 /**
  * Finds the contiguous subarray of `candy_counts` with the maximum sum that
