@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+// Finds the best home range in parallel. Criteria for "best":
+// 1. Only ranges with non-zero sums are allowed to update the best
+// range
+// 2. If sums are equal, prefer the one with smaller start index
+// 3. If sums and start indices are equal, prefer the one with smaller
+// end index
+// If no valid range exists, sets `home_start` and `home_end` to `home_count`.
 void findBestHomeRange(const uint16_t candy_counts[], const size_t home_count,
                        const uint16_t candies_thresh, size_t *const home_start,
                        size_t *const home_end) {
@@ -118,6 +125,13 @@ size_t lowerBound(const uint64_t P[], size_t lo, size_t hi,
   return lo;
 }
 
+// Finds the best home range in parallel. Criteria for "best":
+// 1. Only ranges with non-zero sums are allowed to update the best
+// range
+// 2. If sums are equal, prefer the one with smaller start index
+// 3. If sums and start indices are equal, prefer the one with smaller
+// end index
+// If no valid range exists, sets `home_start` and `home_end` to `home_count`.
 void findBestHomeRangeParallel(const uint16_t candy_counts[],
                                const size_t home_count,
                                const uint16_t candies_thresh,
