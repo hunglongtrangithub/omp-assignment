@@ -2,6 +2,14 @@
 
 Solution to the compute assignment. Implements both sequential and parallel (OpenMP) versions.
 
+## Algorithm
+
+Both sequential and parallel implementations use the sliding window approach. Best home range is updated by these 3 criteria:
+
+1. Larger sum wins
+2. If tied, smaller start index wins
+3. If still tied, smaller end index wins
+
 Time complexities:
 
 - Sequential: O(n)
