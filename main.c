@@ -31,7 +31,7 @@ int main(void) {
     fclose(file);
     return 1;
   }
-  uint16_t *const candy_counts = (uint16_t *)malloc(candy_counts_size);
+  uint16_t *const candy_counts = malloc(candy_counts_size);
   if (candy_counts == NULL) {
     fprintf(stderr, "Cannot allocate memory for candy counts\n");
     fclose(file);

@@ -40,53 +40,62 @@ void findBestHomeRange(const uint16_t candy_counts[], const size_t home_count,
   *home_end = best_end;
 }
 
-static void buildPrefixSum(const uint16_t candy_counts[],
-                           const size_t home_count, uint64_t P[]) {
+#define CACHE_LINE 64
+
+typedef struct {
+  uint64_t value;
+  char pad[CACHE_LINE - sizeof(uint64_t)];
+} padded_uint64_t;
+
+// Builds the exclusive prefix sum array `P`. `P` is expected to have length
+// `home_count + 1`.
+void buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
+                    uint64_t P[]) {
   P[0] = 0;
+  // Allocate for max number of threads. Actual number of threads may be less.
+  // Avoid false sharing by giving each thread its own cache line for the offset
+  padded_uint64_t *offsets =
+      malloc((size_t)omp_get_max_threads() * sizeof(padded_uint64_t));
+  assert(offsets != NULL);
 
-  int nthreads;
-#pragma omp parallel
-#pragma omp single
-  nthreads = omp_get_num_threads();
-
-  uint64_t *offsets = calloc((size_t)nthreads, sizeof(uint64_t));
-  if (!offsets)
-    return;
-
+  // Every thread computes the prefix sums for its own chunk and stores the
+  // total in offsets[tid].value
 #pragma omp parallel
   {
+    int nthreads = omp_get_num_threads();
     int tid = omp_get_thread_num();
-
     size_t chunk = (home_count + (size_t)nthreads - 1) / (size_t)nthreads;
     size_t chunk_start = (size_t)tid * chunk;
     size_t chunk_end =
         chunk_start + chunk < home_count ? chunk_start + chunk : home_count;
 
-    // Pass 1 — local prefix sums relative to chunk start
     if (chunk_start < home_count) {
+      // Save result for chunk_start
       P[chunk_start + 1] = candy_counts[chunk_start];
+      // Compute for the rest of the chunk
       for (size_t i = chunk_start + 1; i < chunk_end; i++)
         P[i + 1] = P[i] + candy_counts[i];
-      offsets[tid] = P[chunk_end];
+      // Save total for this chunk as offset for the next chunk
+      offsets[tid].value = P[chunk_end];
     }
 
 #pragma omp barrier
 
-    // Sequential pass: prefix over chunk totals
+    // Sequentially compute the true offset for each chunk based on the totals
+    // computed by each thread
 #pragma omp single
     {
-      uint64_t running = 0;
+      uint64_t curr_offset = 0;
       for (int t = 0; t < nthreads; t++) {
-        uint64_t chunk_total = offsets[t];
-        offsets[t] = running;
-        running += chunk_total;
+        uint64_t chunk_total = offsets[t].value;
+        offsets[t].value = curr_offset;
+        curr_offset += chunk_total;
       }
     }
-    // implicit barrier after omp single
 
-    // Pass 2 — add offset to all elements in this chunk
+    // Update the prefix sums for this chunk based on its true offset
     if (chunk_start < home_count) {
-      uint64_t offset = offsets[tid];
+      uint64_t offset = offsets[tid].value;
       for (size_t i = chunk_start; i < chunk_end; i++)
         P[i + 1] += offset;
     }
@@ -95,10 +104,10 @@ static void buildPrefixSum(const uint16_t candy_counts[],
   free(offsets);
 }
 
-// Returns the leftmost index in `P[lo..hi]` where `P[index] >= target`.
-// If no such index exists, returns `hi`.
-static size_t lowerBound(const uint64_t P[], size_t lo, size_t hi,
-                         const uint64_t target) {
+// Does binary search and returns the leftmost index in `P[lo..hi]` where
+// `P[index] >= target`. If no such index exists, returns `hi`.
+size_t lowerBound(const uint64_t P[], size_t lo, size_t hi,
+                  const uint64_t target) {
   while (lo < hi) {
     size_t mid = lo + (hi - lo) / 2;
     if (P[mid] >= target)
@@ -132,7 +141,6 @@ void findBestHomeRangeParallel(const uint16_t candy_counts[],
     int tid = omp_get_thread_num();
     int nthreads = omp_get_num_threads();
 
-    // Compute this thread's chunk boundaries
     size_t chunk = (home_count + (size_t)nthreads - 1) / (size_t)nthreads;
     size_t chunk_start = (size_t)tid * chunk;
     size_t chunk_end =
@@ -143,19 +151,21 @@ void findBestHomeRangeParallel(const uint16_t candy_counts[],
     uint64_t local_best = 0;
 
     if (chunk_start < home_count) {
-      // Do binary search for the correct initial left pointer
-      uint64_t target = P[chunk_start + 1] > candies_thresh
-                            ? P[chunk_start + 1] - candies_thresh
-                            : 0;
+      // Find the leftmost index i such that P[chunk_start + 1] - P[i] <=
+      // candies_thresh <=> P[i] >= P[chunk_start + 1] - candies_thresh.
+      const uint64_t P_chunk_start = P[chunk_start + 1];
+      uint64_t target =
+          P_chunk_start > candies_thresh ? P_chunk_start - candies_thresh : 0;
       size_t i = lowerBound(P, 0, chunk_start + 1, target);
 
       // Slide through this thread's chunk
       for (size_t j = chunk_start; j < chunk_end; j++) {
+        const uint64_t P_j = P[j + 1];
         // Advance i to maintain sum <= thresh
-        while (P[j + 1] - P[i] > candies_thresh)
+        while (P_j - P[i] > candies_thresh)
           i++;
 
-        uint64_t sum = P[j + 1] - P[i];
+        const uint64_t sum = P_j - P[i];
         if (sum > 0 &&
             (sum > local_best || (sum == local_best && i < local_start) ||
              (sum == local_best && i == local_start && j < local_end))) {

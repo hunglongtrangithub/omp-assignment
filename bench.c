@@ -79,7 +79,7 @@ static void bench(const uint16_t *candy_counts, size_t home_count) {
 
 int main(int argc, char *argv[]) {
 
-  for (size_t home_count = 1000; home_count <= 100000000; home_count *= 10) {
+  for (size_t home_count = 100; home_count <= 100000000; home_count *= 100) {
     uint16_t *candy_counts = malloc(home_count * sizeof(uint16_t));
     if (candy_counts == NULL) {
       fprintf(stderr, "error: allocation failed for %zu homes\n", home_count);
