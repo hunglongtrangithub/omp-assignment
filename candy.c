@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <omp.h>
 #include <stddef.h>
 #include <stdint.h>
