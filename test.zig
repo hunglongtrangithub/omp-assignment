@@ -8,7 +8,8 @@ fn testBuildPrefixSum(counts: []const u16, expected: []const u64) !void {
     const P = try std.testing.allocator.alloc(u64, n + 1);
     defer std.testing.allocator.free(P);
 
-    c.buildPrefixSum(counts.ptr, n, P.ptr);
+    const result = c.buildPrefixSum(counts.ptr, n, P.ptr);
+    try std.testing.expectEqual(0, result);
 
     try std.testing.expectEqual(0, P[0]);
     try std.testing.expectEqualSlices(u64, expected, P[1..]);
@@ -33,13 +34,14 @@ fn testFindBestHomeRange(counts: []const u16, thresh: u16, expected_start: usize
     try std.testing.expectEqual(expected_end, home_end);
     var home_start_parallel: usize = undefined;
     var home_end_parallel: usize = undefined;
-    c.findBestHomeRangeParallel(
+    const result = c.findBestHomeRangeParallel(
         counts.ptr,
         counts.len,
         thresh,
         &home_start_parallel,
         &home_end_parallel,
     );
+    try std.testing.expectEqual(0, result);
     try std.testing.expectEqual(expected_start, home_start_parallel);
     try std.testing.expectEqual(expected_end, home_end_parallel);
 }

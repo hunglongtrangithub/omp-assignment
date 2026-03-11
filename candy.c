@@ -55,15 +55,16 @@ typedef struct {
 } padded_uint64_t;
 
 // Builds the exclusive prefix sum array `P`. `P` is expected to have length
-// `home_count + 1`.
-void buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
-                    uint64_t P[]) {
+// `home_count + 1`. Returns 0 on success, non-zero on failure.
+uint8_t buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
+                       uint64_t P[]) {
   P[0] = 0;
   // Allocate for max number of threads. Actual number of threads may be less.
   // Avoid false sharing by giving each thread its own cache line for the offset
   padded_uint64_t *offsets =
       malloc((size_t)omp_get_max_threads() * sizeof(padded_uint64_t));
-  assert(offsets != NULL);
+  if (offsets == NULL)
+    return 1;
 
   // Every thread computes the prefix sums for its own chunk and stores the
   // total in offsets[tid].value
@@ -109,6 +110,7 @@ void buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
   }
 
   free(offsets);
+  return 0;
 }
 
 // Does binary search and returns the leftmost index in `P[lo..hi]` where
@@ -132,19 +134,26 @@ size_t lowerBound(const uint64_t P[], size_t lo, size_t hi,
 // 3. If sums and start indices are equal, prefer the one with smaller
 // end index
 // If no valid range exists, sets `home_start` and `home_end` to `home_count`.
-void findBestHomeRangeParallel(const uint16_t candy_counts[],
-                               const size_t home_count,
-                               const uint16_t candies_thresh,
-                               size_t *home_start, size_t *home_end) {
+// Returns 0 on success, non-zero on failure.
+uint8_t findBestHomeRangeParallel(const uint16_t candy_counts[],
+                                  const size_t home_count,
+                                  const uint16_t candies_thresh,
+                                  size_t *home_start, size_t *home_end) {
   if (home_count == 0 || candies_thresh == 0) {
     *home_start = home_count;
     *home_end = home_count;
-    return;
+    return 0;
   }
 
   uint64_t *P = malloc((home_count + 1) * sizeof(uint64_t));
-  assert(P != NULL); // Allocation failure is fatal for now
-  buildPrefixSum(candy_counts, home_count, P);
+  if (P == NULL)
+    return 1;
+
+  uint8_t err = buildPrefixSum(candy_counts, home_count, P);
+  if (err != 0) {
+    free(P);
+    return err;
+  }
 
   size_t best_start = home_count;
   size_t best_end = home_count;
@@ -207,4 +216,5 @@ void findBestHomeRangeParallel(const uint16_t candy_counts[],
   free(P);
   *home_start = best_start;
   *home_end = best_end;
+  return 0;
 }

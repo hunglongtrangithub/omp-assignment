@@ -50,8 +50,15 @@ int main(void) {
   size_t home_start;
   size_t home_end;
 #ifdef USE_PARALLEL
-  findBestHomeRangeParallel(candy_counts, home_count, candies_thresh,
-                            &home_start, &home_end);
+  uint8_t result = findBestHomeRangeParallel(
+      candy_counts, home_count, candies_thresh, &home_start, &home_end);
+  if (result != 0) {
+    fprintf(stderr, "findBestHomeRangeParallel failed with error code %u\n",
+            result);
+    free(candy_counts);
+    fclose(file);
+    return 1;
+  }
 #else
   findBestHomeRange(candy_counts, home_count, candies_thresh, &home_start,
                     &home_end);
