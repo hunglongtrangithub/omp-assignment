@@ -32,7 +32,8 @@ static uint8_t verify(const uint16_t *candy_counts, size_t home_count,
             "  [FAIL] sum mismatch: parallel=%llu sequential=%llu\n"
             "         parallel   range [%zu, %zu]\n"
             "         sequential range [%zu, %zu]\n",
-            par_sum, seq_sum, par_start, par_end, seq_start, seq_end);
+            (unsigned long long)par_sum, (unsigned long long)seq_sum, par_start,
+            par_end, seq_start, seq_end);
     return 0;
   }
   return 1;
@@ -45,8 +46,23 @@ static void bench(const uint16_t *candy_counts, size_t home_count) {
       "  %s\n",
       "----------------------------------------------------------------------");
 
-  for (int r = 0; r < N_RUNS; r++) {
-    uint16_t thresh = (uint16_t)(rand() % (MAX_CANDY_COUNT + 1));
+  uint64_t total_sum = 0;
+  uint16_t min_candy = MAX_CANDY_COUNT;
+  for (size_t i = 0; i < home_count; i++) {
+    total_sum += candy_counts[i];
+    if (candy_counts[i] < min_candy)
+      min_candy = candy_counts[i];
+  }
+
+  uint16_t thresholds[] = {
+      total_sum + 1,                       // larger than any possible sums
+      (min_candy > 0) ? min_candy - 1 : 0, // smaller than any possible sums
+      (uint16_t)(total_sum / 2)            // around the middle
+  };
+  const char *thresh_labels[] = {"large", "small", "medium"};
+
+  for (int r = 0; r < 3; r++) {
+    uint16_t thresh = thresholds[r];
 
     size_t seq_start, seq_end;
     double t;
@@ -57,9 +73,15 @@ static void bench(const uint16_t *candy_counts, size_t home_count) {
 
     size_t par_start, par_end;
     t = now_ns();
-    findBestHomeRangeParallel(candy_counts, home_count, thresh, &par_start,
-                              &par_end);
+    uint8_t err = findBestHomeRangeParallel(candy_counts, home_count, thresh,
+                                            &par_start, &par_end);
     double par_ns = now_ns() - t;
+
+    if (err != 0) {
+      fprintf(stderr, "  findBestHomeRangeParallel failed with error code %u\n",
+              err);
+      continue;
+    }
 
     uint64_t seq_sum = 0;
     if (seq_start <= seq_end && seq_end < home_count)
@@ -70,16 +92,16 @@ static void bench(const uint16_t *candy_counts, size_t home_count) {
                         seq_end);
 
     printf(
-        "  %-8zu %-7u  %8.3f ms     %8.3f ms     %6.2fx     sum=%-6llu  %s\n",
-        home_count, thresh, seq_ns / 1e6, par_ns / 1e6,
-        seq_ns / (par_ns > 0.0 ? par_ns : 1e-9), seq_sum,
+        "  %-8zu %-7s  %8.3f ms     %8.3f ms     %6.2fx     sum=%-6llu  %s\n",
+        home_count, thresh_labels[r], seq_ns / 1e6, par_ns / 1e6,
+        seq_ns / (par_ns > 0.0 ? par_ns : 1e-9), (unsigned long long)seq_sum,
         ok ? "[OK]" : "[FAIL]");
   }
 }
 
 int main(int argc, char *argv[]) {
 
-  for (size_t home_count = 100; home_count <= 100000000; home_count *= 100) {
+  for (size_t home_count = 1e3; home_count <= 1e9; home_count *= 1e3) {
     uint16_t *candy_counts = malloc(home_count * sizeof(uint16_t));
     if (candy_counts == NULL) {
       fprintf(stderr, "error: allocation failed for %zu homes\n", home_count);
@@ -90,9 +112,9 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i < home_count; i++)
       candy_counts[i] = (uint16_t)(rand() % (MAX_CANDY_COUNT + 1));
 
-    printf("Benchmark: %zu homes, candy counts in [0, 1000], %d random "
-           "thresholds\n\n",
-           home_count, N_RUNS);
+    printf("Benchmark: %zu homes, candy counts in [0, 1000], 3 thresholds "
+           "(large, small, medium)\n\n",
+           home_count);
 
     bench(candy_counts, home_count);
 
