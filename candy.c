@@ -47,22 +47,13 @@ void findBestHomeRange(const uint16_t candy_counts[], const size_t home_count,
   *home_end = best_end;
 }
 
-#define CACHE_LINE 64
-
-typedef struct {
-  uint64_t value;
-  char pad[CACHE_LINE - sizeof(uint64_t)];
-} padded_uint64_t;
-
 // Builds the exclusive prefix sum array `P`. `P` is expected to have length
 // `home_count + 1`. Returns 0 on success, non-zero on failure.
 uint8_t buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
                        uint64_t P[]) {
   P[0] = 0;
   // Allocate for max number of threads. Actual number of threads may be less.
-  // Avoid false sharing by giving each thread its own cache line for the offset
-  padded_uint64_t *offsets =
-      malloc((size_t)omp_get_max_threads() * sizeof(padded_uint64_t));
+  uint64_t *offsets = malloc((size_t)omp_get_max_threads() * sizeof(uint64_t));
   if (offsets == NULL)
     return 1;
 
@@ -84,7 +75,7 @@ uint8_t buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
       for (size_t i = chunk_start + 1; i < chunk_end; i++)
         P[i + 1] = P[i] + candy_counts[i];
       // Save total for this chunk as offset for the next chunk
-      offsets[tid].value = P[chunk_end];
+      offsets[tid] = P[chunk_end];
     }
 
 #pragma omp barrier
@@ -95,15 +86,15 @@ uint8_t buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
     {
       uint64_t curr_offset = 0;
       for (int t = 0; t < nthreads; t++) {
-        const uint64_t chunk_total = offsets[t].value;
-        offsets[t].value = curr_offset;
+        const uint64_t chunk_total = offsets[t];
+        offsets[t] = curr_offset;
         curr_offset += chunk_total;
       }
     }
 
     // Update the prefix sums for this chunk based on its true offset
     if (chunk_start < home_count) {
-      const uint64_t offset = offsets[tid].value;
+      const uint64_t offset = offsets[tid];
       for (size_t i = chunk_start; i < chunk_end; i++)
         P[i + 1] += offset;
     }
