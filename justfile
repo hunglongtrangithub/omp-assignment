@@ -8,3 +8,6 @@ run-parallel:
 
 test:
     zig build test
+
+bench:
+    {{cc}} -O3 -fopenmp bench.c -o bench; ./bench
