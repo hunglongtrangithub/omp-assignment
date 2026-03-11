@@ -29,7 +29,7 @@ static uint8_t verify(const uint16_t *candy_counts, size_t home_count,
 
   if (par_sum != seq_sum) {
     fprintf(stderr,
-            "  [FAIL] sum mismatch: parallel=%lu sequential=%lu\n"
+            "  [FAIL] sum mismatch: parallel=%llu sequential=%llu\n"
             "         parallel   range [%zu, %zu]\n"
             "         sequential range [%zu, %zu]\n",
             par_sum, seq_sum, par_start, par_end, seq_start, seq_end);
@@ -69,10 +69,11 @@ static void bench(const uint16_t *candy_counts, size_t home_count) {
     uint8_t ok = verify(candy_counts, home_count, par_start, par_end, seq_start,
                         seq_end);
 
-    printf("  %-8zu %-7u  %8.3f ms     %8.3f ms     %6.2fx     sum=%-6lu  %s\n",
-           home_count, thresh, seq_ns / 1e6, par_ns / 1e6,
-           seq_ns / (par_ns > 0.0 ? par_ns : 1e-9), seq_sum,
-           ok ? "[OK]" : "[FAIL]");
+    printf(
+        "  %-8zu %-7u  %8.3f ms     %8.3f ms     %6.2fx     sum=%-6llu  %s\n",
+        home_count, thresh, seq_ns / 1e6, par_ns / 1e6,
+        seq_ns / (par_ns > 0.0 ? par_ns : 1e-9), seq_sum,
+        ok ? "[OK]" : "[FAIL]");
   }
 }
 
