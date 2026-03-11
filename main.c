@@ -65,12 +65,13 @@ int main(void) {
 #endif
 
   if (home_start < home_count && home_end < home_count) {
-    uint16_t candies_total = 0;
+    uint64_t candies_total = 0;
     for (size_t i = home_start; i <= home_end; i++) {
       candies_total += candy_counts[i];
     }
-    printf("Start at home %zu and go to home %zu getting %hu pieces of candy\n",
-           home_start + 1, home_end + 1, candies_total);
+    printf(
+        "Start at home %zu and go to home %zu getting %llu pieces of candy\n",
+        home_start + 1, home_end + 1, (unsigned long long)candies_total);
   } else {
     printf("Don't go here\n");
   }
