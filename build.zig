@@ -31,7 +31,7 @@ pub fn build(b: *std.Build) void {
             mod.addSystemIncludePath(.{ .cwd_relative = "/opt/homebrew/opt/libomp/include" });
             mod.linkSystemLibrary("omp", .{});
         },
-        else => @panic("Unsupported OS. Can only build on macOS with Homebrew's libomp installed."),
+        else => @panic("Unsupported OS."),
     }
 
     const mod_tests = b.addTest(.{

@@ -11,3 +11,14 @@ test:
 
 bench:
     {{ cc }} -O3 -fopenmp bench.c -o bench; ./bench
+
+submit:
+    zip submission.zi_ \
+      candy.c \
+      candy.h \
+      main.c \
+      Makefile \
+      build.zig \
+      test.zig \
+      README.md \
+      input.txt
