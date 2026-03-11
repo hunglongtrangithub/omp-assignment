@@ -70,11 +70,11 @@ uint8_t buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
   // total in offsets[tid].value
 #pragma omp parallel
   {
-    int nthreads = omp_get_num_threads();
-    int tid = omp_get_thread_num();
-    size_t chunk = (home_count + (size_t)nthreads - 1) / (size_t)nthreads;
-    size_t chunk_start = (size_t)tid * chunk;
-    size_t chunk_end =
+    const int nthreads = omp_get_num_threads();
+    const int tid = omp_get_thread_num();
+    const size_t chunk = (home_count + (size_t)nthreads - 1) / (size_t)nthreads;
+    const size_t chunk_start = (size_t)tid * chunk;
+    const size_t chunk_end =
         chunk_start + chunk < home_count ? chunk_start + chunk : home_count;
 
     if (chunk_start < home_count) {
@@ -95,7 +95,7 @@ uint8_t buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
     {
       uint64_t curr_offset = 0;
       for (int t = 0; t < nthreads; t++) {
-        uint64_t chunk_total = offsets[t].value;
+        const uint64_t chunk_total = offsets[t].value;
         offsets[t].value = curr_offset;
         curr_offset += chunk_total;
       }
@@ -103,7 +103,7 @@ uint8_t buildPrefixSum(const uint16_t candy_counts[], const size_t home_count,
 
     // Update the prefix sums for this chunk based on its true offset
     if (chunk_start < home_count) {
-      uint64_t offset = offsets[tid].value;
+      const uint64_t offset = offsets[tid].value;
       for (size_t i = chunk_start; i < chunk_end; i++)
         P[i + 1] += offset;
     }
@@ -164,9 +164,9 @@ uint8_t findBestHomeRangeParallel(const uint16_t candy_counts[],
     int tid = omp_get_thread_num();
     int nthreads = omp_get_num_threads();
 
-    size_t chunk = (home_count + (size_t)nthreads - 1) / (size_t)nthreads;
-    size_t chunk_start = (size_t)tid * chunk;
-    size_t chunk_end =
+    const size_t chunk = (home_count + (size_t)nthreads - 1) / (size_t)nthreads;
+    const size_t chunk_start = (size_t)tid * chunk;
+    const size_t chunk_end =
         chunk_start + chunk < home_count ? chunk_start + chunk : home_count;
 
     size_t local_start = home_count;
@@ -177,7 +177,7 @@ uint8_t findBestHomeRangeParallel(const uint16_t candy_counts[],
       // Find the leftmost index i such that P[chunk_start + 1] - P[i] <=
       // candies_thresh <=> P[i] >= P[chunk_start + 1] - candies_thresh.
       const uint64_t P_chunk_start = P[chunk_start + 1];
-      uint64_t target =
+      const uint64_t target =
           P_chunk_start > candies_thresh ? P_chunk_start - candies_thresh : 0;
       size_t i = lowerBound(P, 0, chunk_start + 1, target);
 
